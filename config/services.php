@@ -35,10 +35,10 @@ return [
         ],
     ],
 
-    'khalti' => [
-        'public_key' => env('KHALTI_PUBLIC_KEY', 'your_public_key_here'),
-        'secret_key' => env('KHALTI_SECRET_KEY', 'your_secret_key_here'),
-        'base_url' => env('KHALTI_BASE_URL', 'https://a.khalti.com/api/v2/'),
+    'esewa' => [
+        'merchant_code' => env('ESEWA_MERCHANT_CODE', 'EPAYTEST'),
+        'secret_key'    => env('ESEWA_SECRET_KEY', '8gBm/:&EnhH.1/q'),
+        'base_url'      => env('ESEWA_BASE_URL', 'https://rc-epay.esewa.com.np/api/epay/main/v2/form'),
     ],
 
 ];

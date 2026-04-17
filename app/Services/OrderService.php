@@ -25,10 +25,10 @@ class OrderService
      * @param User   $user         The customer placing the order
      * @param array  $cartItems    Array of ['product_id', 'variant_id', 'quantity']
      * @param array  $shippingData ['shipping_address', 'billing_address', 'phone', 'notes']
-     * @param string $paymentMethod The selected payment method (e.g., 'khalti', 'cod')
+     * @param string $paymentMethod The selected payment method (e.g., 'esewa', 'cod')
      * @return Order
      */
-    public function placeOrder(User $user, array $cartItems, array $shippingData, string $paymentMethod = 'khalti'): Order
+    public function placeOrder(User $user, array $cartItems, array $shippingData, string $paymentMethod = 'esewa'): Order
     {
         return DB::transaction(function () use ($user, $cartItems, $shippingData, $paymentMethod) {
             $totalAmount = 0;

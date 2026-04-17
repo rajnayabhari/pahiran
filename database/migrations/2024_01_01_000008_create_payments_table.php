@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
             $table->string('transaction_id')->nullable();
-            $table->string('payment_method')->default('khalti');
+            $table->string('payment_method')->default('esewa');
             $table->decimal('amount', 10, 2);
             $table->enum('status', ['pending', 'completed', 'failed', 'refunded'])->default('pending');
             $table->timestamp('paid_at')->nullable();

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="Pahiran — Premium Fashion Ecommerce. Discover curated fashion from independent sellers.">
     <title>@yield('title', 'Pahiran — Fashion Ecommerce')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -21,7 +22,7 @@
             <div class="flex justify-between items-center h-16">
                 {{-- Logo --}}
                 <a href="{{ route('home') }}" class="flex items-center">
-                    <img src="{{ asset('logo.jpeg') }}" alt="Pahiran" class="h-8 w-auto">
+                    <img src="{{ asset('Logo.jpeg') }}" alt="Pahiran" class="h-8 w-auto">
                 </a>
 
                 {{-- Desktop Nav --}}
@@ -142,7 +143,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div class="md:col-span-2">
-                    <img src="{{ asset('logo.jpeg') }}" alt="Pahiran" class="h-6 w-auto mb-3">
+                    <img src="{{ asset('Logo.jpeg') }}" alt="Pahiran" class="h-6 w-auto mb-3">
                     <p class="text-sm leading-relaxed max-w-md">Curated fashion from independent sellers. Discover unique styles that express your individuality.</p>
                 </div>
                 <div>
@@ -167,5 +168,6 @@
         </div>
     </footer>
 
+    @stack('scripts')
 </body>
 </html>

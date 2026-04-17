@@ -68,8 +68,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/wishlist/toggle/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 });
 
-// Khalti callback (no auth — Khalti redirects here)
-Route::get('/payment/khalti/callback', [CheckoutController::class, 'callback'])->name('payment.khalti.callback');
+// eSewa callback routes
+Route::get('/payment/esewa/success', [CheckoutController::class, 'esewaSuccess'])->name('payment.esewa.success');
+Route::get('/payment/esewa/failure', [CheckoutController::class, 'esewaFailure'])->name('payment.esewa.failure');
 
 /*
 |--------------------------------------------------------------------------

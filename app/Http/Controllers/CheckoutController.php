@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\KhaltiPaymentService;
+use App\Models\Payment;
+use App\Services\EsewaPaymentService;
 use App\Services\OrderService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CheckoutController extends Controller
 {
     public function __construct(
         protected OrderService $orderService,
-        protected KhaltiPaymentService $khaltiService,
+        protected EsewaPaymentService $esewaService,
     ) {}
 
     public function index()
@@ -36,7 +38,7 @@ class CheckoutController extends Controller
                 'product' => $product,
                 'variant' => $variant,
                 'quantity' => $item['quantity'],
-                'price' => $price,
+                'price'   => $price,
                 'subtotal' => $subtotal,
             ];
         }
@@ -48,9 +50,9 @@ class CheckoutController extends Controller
     {
         $request->validate([
             'shipping_address' => 'required|string',
-            'phone' => 'required|string',
-            'notes' => 'nullable|string',
-            'payment_method' => 'required|in:khalti,cod',
+            'phone'            => 'required|string|regex:/^[0-9]{10}$/',
+            'notes'            => 'nullable|string|max:500',
+            'payment_method'   => 'required|in:esewa,cod',
         ]);
 
         $cart = session()->get('cart', []);
@@ -58,72 +60,84 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
-        // Place the order
+        // Create the order (cart items are validated, stock decremented inside OrderService)
         $order = $this->orderService->placeOrder(
             auth()->user(),
             array_values($cart),
             [
                 'shipping_address' => $request->shipping_address,
-                'billing_address' => $request->shipping_address,
-                'phone' => $request->phone,
-                'notes' => $request->notes,
+                'billing_address'  => $request->shipping_address,
+                'phone'            => $request->phone,
+                'notes'            => $request->notes,
             ],
             $request->payment_method
         );
 
+        // ── Cash on Delivery ──────────────────────────────────────────────────
         if ($request->payment_method === 'cod') {
-            // Clear the cart
             session()->forget('cart');
 
             return redirect()->route('checkout.success', ['order_id' => $order->id])
-                ->with('success', 'Order placed successfully! Please pay on delivery.');
+                ->with('success', 'Order placed! You will pay on delivery.');
         }
 
-        // Initiate Khalti payment
-        $result = $this->khaltiService->initiate($order);
+        // ── eSewa (ePay v2) ──────────────────────────────────────────────────
+        $esewaForm = $this->esewaService->getPaymentFormParams($order);
 
-        if ($result['success']) {
-            // Clear the cart
-            session()->forget('cart');
+        // Clear cart since we are now handling off to eSewa page
+        session()->forget('cart');
 
-            return redirect($result['payment_url']);
-        }
-
-        return back()->with('error', $result['error']);
+        return view('storefront.payment-redirect', compact('esewaForm'));
     }
 
-    public function callback(Request $request)
+    /**
+     * eSewa redirects here when payment succeeds.
+     * Contains base64 encoded 'data' in query string.
+     */
+    public function esewaSuccess(Request $request)
     {
-        $pidx = $request->query('pidx');
-        $status = $request->query('status');
-
-        if (!$pidx) {
-            return redirect('/')->with('error', 'Invalid payment callback.');
+        $data = $request->query('data');
+        if (!$data) {
+            return redirect('/')->with('error', 'Invalid payment response from eSewa.');
         }
 
-        if ($status === 'Completed') {
-            $result = $this->khaltiService->verify($pidx);
+        $result = $this->esewaService->verifyCallback($data);
 
-            if ($result['success']) {
-                return redirect()->route('checkout.success', ['pidx' => $pidx])
-                    ->with('success', 'Payment successful! Your order has been placed.');
-            }
+        if ($result['success']) {
+            return redirect()->route('checkout.success', ['pidx' => $result['transaction_uuid']])
+                ->with('success', 'eSewa Payment verified! Your order is confirmed.');
         }
 
-        return redirect('/')->with('error', 'Payment was not completed. Please try again.');
+        // We don't have the order/payment context extracted if verify failed before decoding,
+        // but verifyCallback handles updating to 'failed' if needed conceptually.
+        // Actually verifyCallback doesn't mark failed automatically to prevent tampering causing failure.
+        return redirect('/')->with('error', $result['error'] ?? 'Payment verification failed. Please contact support.');
+    }
+
+    /**
+     * eSewa redirects here when the user cancels the payment.
+     */
+    public function esewaFailure(Request $request)
+    {
+        Log::info('eSewa payment cancelled by user');
+        return redirect()->route('cart.index')->with('error', 'Payment was cancelled. You can try checking out again.');
     }
 
     public function success(Request $request)
     {
-        $pidx = $request->query('pidx');
+        $pidx    = $request->query('pidx');
         $orderId = $request->query('order_id');
 
         if ($pidx) {
-            $payment = \App\Models\Payment::where('transaction_id', $pidx)->with('order')->first();
+            $payment = Payment::where('transaction_id', $pidx)->with('order')->first();
         } elseif ($orderId) {
-            $payment = \App\Models\Payment::where('order_id', $orderId)->with('order')->first();
+            $payment = Payment::where('order_id', $orderId)->with('order')->first();
         } else {
             return redirect('/')->with('error', 'No order reference found.');
+        }
+
+        if (! $payment) {
+            return redirect('/')->with('error', 'Order not found.');
         }
 
         return view('storefront.success', compact('payment'));
