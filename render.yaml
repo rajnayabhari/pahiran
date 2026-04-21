@@ -1,0 +1,63 @@
+services:
+  - type: web
+    name: pahiran
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: singapore
+    plan: free
+    envVars:
+      - key: APP_NAME
+        value: Pahiran
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_URL
+        fromService:
+          name: pahiran
+          type: web
+          property: host
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: pahiran-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: pahiran-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: pahiran-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: pahiran-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: pahiran-db
+          property: password
+      - key: SESSION_DRIVER
+        value: cookie
+      - key: CACHE_STORE
+        value: file
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: ESEWA_MERCHANT_CODE
+        value: EPAYTEST
+      - key: ESEWA_SECRET_KEY
+        value: "8gBm/:&EnhH.1/q"
+      - key: ESEWA_BASE_URL
+        value: "https://rc-epay.esewa.com.np/api/epay/main/v2/form"
+
+databases:
+  - name: pahiran-db
+    databaseName: pahiran
+    plan: free
+    region: singapore
