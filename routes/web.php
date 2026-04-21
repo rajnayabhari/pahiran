@@ -29,10 +29,6 @@ Route::get('/test-image', function() {
 Route::get('/product/{slug}', [StorefrontController::class, 'show'])->name('product.show');
 Route::get('/category/{slug}', [StorefrontController::class, 'category'])->name('category.show');
 Route::get('/search', [StorefrontController::class, 'search'])->name('search');
-Route::get('/run-seeder', function() {
-    \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
-    return 'Database seeded successfully! Please remove this route for security.';
-});
 
 /*
 |--------------------------------------------------------------------------
